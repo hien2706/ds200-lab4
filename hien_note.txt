@@ -6,3 +6,18 @@ kafka-topics --bootstrap-server localhost:9092 --delete --topic loan-application
 
 
 spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2 spark_consumer.py
+
+spark-submit \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2,io.delta:delta-spark_2.12:3.3.0 \
+  --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
+  --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog" \
+  --conf "spark.sql.streaming.checkpointLocation=/tmp/kafka-syslog-checkpoint" \
+  /app/spark_jobs/spark_consumer.py
+
+
+nohup spark-submit \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2,io.delta:delta-spark_2.12:3.3.0 \
+  --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" \
+  --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog" \
+  --conf "spark.sql.streaming.checkpointLocation=/tmp/kafka-syslog-checkpoint" \
+  /app/spark_jobs/spark_consumer.py > /app/spark_logs/spark_job.log 2>&1 &

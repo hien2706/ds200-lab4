@@ -117,7 +117,7 @@ class LoanDefaultModelTrainer:
             model = joblib.load(model_path)
         else:
             logger.info(f"No model found at {model_path}, creating a new model.")
-            model = SGDClassifier(loss="log", penalty="l2", max_iter=1, warm_start=True)
+            model = SGDClassifier(loss="log_loss", penalty="l2", max_iter=1, warm_start=True)
         
         return model
 
@@ -125,13 +125,19 @@ class LoanDefaultModelTrainer:
         """Train a model on a batch of data"""
         logger.info(f"Starting training on batch {batch_id} with {df.count()} records")
         
-        # Transform the features
+        # Build and fit the feature transformation pipeline
         feature_pipeline = self.feature_transformer.build_pipeline()
-        feature_df = df
-        for stage in feature_pipeline:
-            feature_df = stage.fit(feature_df).transform(feature_df)
         
-        # Extract features and labels from the DataFrame
+        # Create the pipeline and fit it to the dataframe
+        pipeline = Pipeline(stages=feature_pipeline)
+        
+        # Fit the pipeline to the dataframe (apply all the transformations)
+        model_pipeline = pipeline.fit(df)
+        
+        # Transform the data using the fitted pipeline
+        feature_df = model_pipeline.transform(df)
+        
+        # Extract features and labels from the transformed DataFrame
         X = feature_df.select("features").rdd.map(lambda row: row[0].toArray()).collect()
         y = feature_df.select("label").rdd.map(lambda row: row[0]).collect()
         
@@ -148,16 +154,17 @@ class LoanDefaultModelTrainer:
         """Evaluate the model and return metrics"""
         logger.info(f"Evaluating model on batch {batch_id}")
         
-        # Transform the features
+        # Transform the features using the pipeline
         feature_pipeline = self.feature_transformer.build_pipeline()
-        feature_df = df
-        for stage in feature_pipeline:
-            feature_df = stage.fit(feature_df).transform(feature_df)
+        model_pipeline = Pipeline(stages=feature_pipeline)
         
-        # Make predictions
+        # Apply transformations to the dataframe using the fitted pipeline
+        feature_df = model_pipeline.fit(df).transform(df)
+        
+        # Make predictions using the trained model
         predictions = model.predict(feature_df.select("features").rdd.map(lambda row: row[0].toArray()).collect())
         
-        # Calculate metrics
+        # Calculate metrics: accuracy, etc.
         correct = sum([1 if pred == true else 0 for pred, true in zip(predictions, df.select("label").collect())])
         accuracy = correct / len(predictions) if len(predictions) > 0 else 0
 
@@ -229,10 +236,10 @@ class LoanDefaultStreamProcessor:
         logger.info("Default distribution in this batch:")
         df.groupBy("label").count().show()
         
-        # Save batch data to Delta table for reference
-        delta_path = f"{self.output_dir}/batch_data/batch_{epoch_id}"
-        df.write.format("delta").mode("overwrite").save(delta_path)
-        logger.info(f"Batch data saved to {delta_path}")
+        # # Save batch data to Delta table for reference
+        # delta_path = f"{self.output_dir}/batch_data/batch_{epoch_id}"
+        # df.write.format("delta").mode("overwrite").save(delta_path)
+        # logger.info(f"Batch data saved to {delta_path}")
         
         try:
             # Train model on this batch
