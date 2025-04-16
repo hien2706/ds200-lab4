@@ -1,0 +1,18 @@
+FROM bitnami/spark:3.5.2
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y python3-pip python3-dev && \
+    pip3 install --no-cache-dir pyspark==3.5.2 
+
+COPY requirements.txt /tmp/
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+
+RUN mkdir -p /app/spark_jobs /opt/spark-apps /opt/spark-data
+
+WORKDIR /app
+
+RUN chmod -R 777 /app /opt/spark-apps /opt/spark-data /tmp
+
+
