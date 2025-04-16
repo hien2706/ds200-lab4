@@ -28,7 +28,7 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     volumes:
       - kafka-data1:/var/lib/kafka/data
 
@@ -51,6 +51,7 @@ services:
       - ./spark/apps:/opt/spark-apps
       - ./spark/data:/opt/spark-data
       - ./spark/jobs:/app/spark_jobs
+      - ./spark/run_logs:/app/spark_logs
       - spark-ivy-cache:/root/.ivy2
       - check-point:/tmp/kafka-syslog-checkpoint
 
@@ -73,6 +74,7 @@ services:
       - ./spark/apps:/opt/spark-apps
       - ./spark/data:/opt/spark-data
       - ./spark/jobs:/app/spark_jobs
+      - ./spark/run_logs:/app/spark_logs
       - spark-ivy-cache:/root/.ivy2
       - check-point:/tmp/kafka-syslog-checkpoint
   

@@ -1,0 +1,8 @@
+kafka-topics --create --bootstrap-server kafka1:29092 --replication-factor 1 --partitions 1 --topic loan-applications
+kafka-console-consumer --topic loan-applications --bootstrap-server kafka1:29092
+
+
+kafka-topics --bootstrap-server localhost:9092 --delete --topic loan-applications
+
+
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2 spark_consumer.py

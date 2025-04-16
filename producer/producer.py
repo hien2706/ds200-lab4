@@ -55,7 +55,6 @@ def generate_loan_data():
     }
     
     # Determine label based on a simple heuristic
-    # This is a simplified model for demonstration; in reality, you'd use a more complex model
     risk_score = 0
     
     # Risk factors
@@ -80,7 +79,7 @@ def generate_loan_data():
 def main():
     """Main function to generate and send loan data to Kafka"""
     # Wait for Kafka to be ready
-    time.sleep(15)
+    time.sleep(5)  # Reduce initial wait time
     
     producer = create_producer()
     
@@ -88,23 +87,26 @@ def main():
         count = 0
         while True:
             data = generate_loan_data()
+            logger.debug(f"Generated data: {data}")  # Debugging line for tracking data generation
+            
             key = data['application_id']
             
-            # Send data to Kafka
+            # Send data to Kafka immediately
             producer.send(KAFKA_TOPIC, key=key, value=data)
+            print(data)
             count += 1
             
             if count % 100 == 0:
-                producer.flush()
+                producer.flush()  # Flush after every 100 records to avoid delay
                 logger.info(f"Sent {count} loan applications to Kafka")
                 
                 # Log sample of last data sent
                 if count % 500 == 0:
                     logger.info(f"Sample data: {json.dumps(data, indent=2)}")
             
-            # Random delay to simulate realistic data flow
-            time.sleep(random.uniform(0.1, 1.0))
-    
+            # Random delay to simulate realistic data flow (but much faster than before)
+            time.sleep(0.1)  # Reduced delay to simulate faster streaming
+            
     except KeyboardInterrupt:
         logger.info("Producer interrupted")
     except Exception as e:

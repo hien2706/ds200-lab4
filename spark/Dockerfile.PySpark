@@ -2,17 +2,27 @@ FROM bitnami/spark:3.5.2
 
 USER root
 
+# Install Python and basic packages
 RUN apt-get update && \
-    apt-get install -y python3-pip python3-dev && \
-    pip3 install --no-cache-dir pyspark==3.5.2 
+    apt-get install -y python3-pip python3-dev wget && \
+    pip3 install --no-cache-dir pyspark==3.5.2
 
+# Create a directory for downloading JARs
+RUN mkdir -p /opt/spark/jars/
+
+# Download Delta Lake JAR files
+RUN wget -P /opt/spark/jars/ https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar && \
+    wget -P /opt/spark/jars/ https://repo1.maven.org/maven2/io/delta/delta-storage/2.4.0/delta-storage-2.4.0.jar
+
+# The Kafka connector is referenced in your spark.jars.packages config, but it's better to download it explicitly
+RUN wget -P /opt/spark/jars/ https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.5.2/spark-sql-kafka-0-10_2.12-3.5.2.jar && \
+    wget -P /opt/spark/jars/ https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.4.0/kafka-clients-3.4.0.jar
+
+# Install Python dependencies
 COPY requirements.txt /tmp/
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
+# Create directories and set permissions
 RUN mkdir -p /app/spark_jobs /opt/spark-apps /opt/spark-data
-
 WORKDIR /app
-
 RUN chmod -R 777 /app /opt/spark-apps /opt/spark-data /tmp
-
-
